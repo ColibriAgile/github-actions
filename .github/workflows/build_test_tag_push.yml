@@ -1,0 +1,87 @@
+name: Build and push image to ECR
+
+on:
+  workflow_call:
+    inputs:
+      repo_name:
+        required: true
+        type: string
+      chart_folder:
+        required: true
+        type: string
+      tag_prefix:
+        required: false
+        type: string
+    secrets:
+      aws_access_key_id:
+        required: true
+      aws_secret_access_key:
+        required: true
+      db_password:
+        required: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      REPO_NAME: ${{ inputs.repo_name }}
+      CHART_FOLDER: ${{ inputs.chart_folder }}
+      TAG_PREFIX: ${{ inputs.tag_prefix }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Checkout submodule
+        uses: srt32/git-actions@v0.0.3
+        with:
+          args: git submodule update --init --recursive
+
+      - name: Read Helm Chart
+        id: chart
+        uses: jacobtomlinson/gha-read-helm-chart@master
+        with:
+          path: ${{ env.CHART_FOLDER }}
+
+      - name: Build image
+        id: build
+        env:
+          IMAGE_NAME: ${{ env.REPO_NAME }}:${{ env.TAG_PREFIX }}${{ steps.chart.outputs.appVersion }}.${{ github.run_number }}
+        run: docker build -t ${{ env.IMAGE_NAME }} .
+
+      - name: Run tests
+        id: tests
+        run: |
+          docker build -t ${{ env.REPO_NAME }}db docker-db/.
+          docker volume create tests
+          docker network create ${{ env.REPO_NAME }}net
+          docker run -d --network ${{ env.REPO_NAME }}net --name ${{ env.REPO_NAME }}db ${{ env.REPO_NAME }}db:latest
+
+          docker run -v tests:/opt/ambiente/${{ env.REPO_NAME }}/tests-results/  \
+            --network ${{ env.REPO_NAME }}net --name ${{ env.REPO_NAME }} \
+            --env 'DB_HOST=${{ env.REPO_NAME }}db' \
+            --env 'DB_USER=postgres' \
+            --env 'DB_PASSWORD=${{ secrets.DB_PASSWORD }}' \
+            --entrypoint fab ${{ env.REPO_NAME }}:${{ env.TAG_PREFIX }}${{ steps.chart.outputs.appVersion }}.${{ github.run_number }} test_docker
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Tag and push the image to Amazon ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          REPOSITORY: ${{ env.REPO_NAME }}
+          IMAGE_TAG: ${{ env.TAG_PREFIX }}${{ steps.chart.outputs.appVersion }}.${{ github.run_number }}
+        run: |
+          docker tag $REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$REPOSITORY:$IMAGE_TAG
+          echo "Pushing image to ECR..."
+          docker push $ECR_REGISTRY/$REPOSITORY:$IMAGE_TAG
