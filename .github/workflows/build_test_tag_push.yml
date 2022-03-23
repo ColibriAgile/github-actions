@@ -20,15 +20,12 @@ on:
       db_password:
         required: true
 
-permissions:
-  checks: write
-  contents: read
-  issues: read
-  pull-requests: write
-
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    permissions: read-all|write-all
+
     env:
       REPO_NAME: ${{ inputs.repo_name }}
       CHART_FOLDER: ${{ inputs.chart_folder }}
