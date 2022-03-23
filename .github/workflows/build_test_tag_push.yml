@@ -20,6 +20,12 @@ on:
       db_password:
         required: true
 
+permissions:
+  checks: write
+  contents: read
+  issues: read
+  pull-requests: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
