@@ -1,5 +1,0 @@
-{
-  "yaml.schemas": {
-    "https://json.schemastore.org/github-workflow.json": "file:///c%3A/Projetos/github_actions/.github/workflows/build_test_tag_push.yml"
-  }
-}
