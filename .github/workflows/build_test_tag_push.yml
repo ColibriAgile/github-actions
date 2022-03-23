@@ -24,7 +24,11 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    permissions: read-all|write-all
+    permissions:
+      checks: write
+      contents: read
+      issues: read
+      pull-requests: write
 
     env:
       REPO_NAME: ${{ inputs.repo_name }}
