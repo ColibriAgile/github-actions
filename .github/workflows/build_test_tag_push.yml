@@ -7,8 +7,9 @@ on:
         required: true
         type: string
       chart_folder:
-        required: true
+        required: false
         type: string
+        default: chart
       tag_suffix:
         required: false
         type: string
