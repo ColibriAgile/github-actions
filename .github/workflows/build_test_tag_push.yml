@@ -9,7 +9,7 @@ on:
       chart_folder:
         required: true
         type: string
-      tag_prefix:
+      tag_suffix:
         required: false
         type: string
       img_working_dir:
@@ -37,7 +37,7 @@ jobs:
     env:
       REPO_NAME: ${{ inputs.repo_name }}
       CHART_FOLDER: ${{ inputs.chart_folder }}
-      TAG_PREFIX: ${{ inputs.tag_prefix }}
+      TAG_SUFFIX: ${{ inputs.tag_suffix }}
       IMG_WORKING_DIR: ${{ inputs.img_working_dir }}
 
     steps:
@@ -58,7 +58,7 @@ jobs:
       - name: Build image
         id: build
         env:
-          IMAGE_NAME: ${{ env.REPO_NAME }}:${{ env.TAG_PREFIX }}${{ steps.chart.outputs.appVersion }}.${{ github.run_number }}
+          IMAGE_NAME: ${{ env.REPO_NAME }}:${{ steps.chart.outputs.appVersion }}.${{ github.run_number }}${{ env.TAG_SUFFIX }}
         run: docker build -t ${{ env.IMAGE_NAME }} .
 
       - name: Run tests
@@ -75,7 +75,7 @@ jobs:
             --env 'DB_HOST=${{ env.REPO_NAME }}db' \
             --env 'DB_USER=postgres' \
             --env 'DB_PASSWORD=${{ secrets.DB_PASSWORD }}' \
-            --entrypoint fab ${{ env.REPO_NAME }}:${{ env.TAG_PREFIX }}${{ steps.chart.outputs.appVersion }}.${{ github.run_number }} test_docker
+            --entrypoint fab ${{ env.REPO_NAME }}:${{ steps.chart.outputs.appVersion }}.${{ github.run_number }}${{ env.TAG_SUFFIX }} test_docker
 
       - name: Publish Unit Test Results
         uses: EnricoMi/publish-unit-test-result-action/composite@v1
@@ -100,7 +100,7 @@ jobs:
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           REPOSITORY: ${{ env.REPO_NAME }}
-          IMAGE_TAG: ${{ env.TAG_PREFIX }}${{ steps.chart.outputs.appVersion }}.${{ github.run_number }}
+          IMAGE_TAG: ${{ steps.chart.outputs.appVersion }}.${{ github.run_number }}${{ env.TAG_SUFFIX }}
         run: |
           docker tag $REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$REPOSITORY:$IMAGE_TAG
           echo "Pushing image to ECR..."
