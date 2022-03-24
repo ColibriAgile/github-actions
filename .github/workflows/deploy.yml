@@ -7,8 +7,9 @@ on:
         required: true
         type: string
       chart_folder:
-        required: true
+        required: false
         type: string
+        default: chart
       cluster_name:
         required: true
         type: string
