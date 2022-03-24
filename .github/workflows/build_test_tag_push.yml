@@ -65,7 +65,7 @@ jobs:
           docker run -d --network ${{ env.REPO_NAME }}net --name ${{ env.REPO_NAME }}db ${{ env.REPO_NAME }}db:latest
         
           mkdir ${{ github.workspace }}/test-results
-          docker run --mount type=bind,source=${{ github.workspace }}/test-results,target=/opt/${{ env.REPO_NAME }}/tests-results/  \
+          docker run --mount type=bind,source=${{ github.workspace }}/test-results,target=/opt/ambiente/${{ env.REPO_NAME }}/tests-results/  \
             --network ${{ env.REPO_NAME }}net --name ${{ env.REPO_NAME }} \
             --env 'DB_HOST=${{ env.REPO_NAME }}db' \
             --env 'DB_USER=postgres' \
