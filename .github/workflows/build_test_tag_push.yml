@@ -76,6 +76,7 @@ jobs:
         uses: EnricoMi/publish-unit-test-result-action/composite@v1
         if: always()
         with:
+          report_individual_runs: "true"
           files: "test-results/*.xml"
 
       - name: Configure AWS credentials
