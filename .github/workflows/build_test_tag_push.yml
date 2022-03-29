@@ -16,6 +16,7 @@ on:
       project_working_dir:
         required: false
         type: string
+        default: './'
       img_working_dir:
         required: false
         type: string
@@ -35,9 +36,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ${{ inputs.project_working_dir && inputs.project_working_dir || github.workspace }}
     permissions:
       checks: write
       contents: read
@@ -63,13 +61,15 @@ jobs:
         id: chart
         uses: jacobtomlinson/gha-read-helm-chart@master
         with:
-          path: ${{ env.CHART_FOLDER }}
+          path: ${{ inputs.project_working_dir }}${{ env.CHART_FOLDER }}
 
       - name: Build image
         id: build
         env:
           IMAGE_NAME: ${{ env.REPO_NAME }}:${{ steps.chart.outputs.appVersion }}.${{ github.run_number }}${{ env.TAG_SUFFIX }}
-        run: docker build -t ${{ env.IMAGE_NAME }} .
+        run: |
+          cd ${{ inputs.project_working_dir }}
+          docker build -t ${{ env.IMAGE_NAME }} .
 
       - name: Run tests
         if: ${{ inputs.run_tests }}
