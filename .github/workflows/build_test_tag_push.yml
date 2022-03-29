@@ -17,6 +17,10 @@ on:
         required: false
         type: string
         default: '/opt/ambiente'
+      run_tests:
+        required: false
+        type: boolean
+        default: true
     secrets:
       aws_access_key_id:
         required: true
@@ -63,6 +67,7 @@ jobs:
         run: docker build -t ${{ env.IMAGE_NAME }} .
 
       - name: Run tests
+        if: ${{ inputs.run_tests }}
         id: tests
         run: |
           docker build -t ${{ env.REPO_NAME }}db docker-db/.
@@ -80,7 +85,7 @@ jobs:
 
       - name: Publish Unit Test Results
         uses: EnricoMi/publish-unit-test-result-action/composite@v1
-        if: always()
+        if: ${{ inputs.run_tests }}
         with:
           report_individual_runs: "true"
           files: "test-results/*.xml"
