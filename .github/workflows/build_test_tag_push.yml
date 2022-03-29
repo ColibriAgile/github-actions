@@ -13,6 +13,9 @@ on:
       tag_suffix:
         required: false
         type: string
+      project_working_dir:
+        required: false
+        type: string
       img_working_dir:
         required: false
         type: string
@@ -57,11 +60,13 @@ jobs:
       - name: Read Helm Chart
         id: chart
         uses: jacobtomlinson/gha-read-helm-chart@master
+        working-directory: ${{ inputs.project_working_dir && inputs.project_working_dir || github.workspace }}
         with:
           path: ${{ env.CHART_FOLDER }}
 
       - name: Build image
         id: build
+        working-directory: ${{ inputs.project_working_dir && inputs.project_working_dir || github.workspace }}
         env:
           IMAGE_NAME: ${{ env.REPO_NAME }}:${{ steps.chart.outputs.appVersion }}.${{ github.run_number }}${{ env.TAG_SUFFIX }}
         run: docker build -t ${{ env.IMAGE_NAME }} .
