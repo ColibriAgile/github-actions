@@ -16,6 +16,9 @@ on:
       cluster_role_arn:
         required: true
         type: string
+      namespace:
+        required: false
+        type: string
     secrets:
       aws_access_key_id:
         required: true
@@ -41,5 +44,5 @@ jobs:
           cluster-role-arn: ${{ inputs.cluster_role_arn }}
           chart-path: ${{ inputs.chart_folder }}/
           values: ${{ secrets.values }}
-          namespace: ${{ inputs.repo_name }}
+          namespace: ${{ inputs.namespace && inputs.namespace || inputs.repo_name }}
           name: ${{ inputs.repo_name }}
