@@ -1,0 +1,43 @@
+name: Update AWS security group
+
+on:
+  workflow_call:
+    inputs:
+      aws_access_key_id:
+        required: true
+        type: string
+      aws_secret_access_key:
+        required: true
+        type: string
+      aws_default_region:
+        required: false
+        type: string
+        default: us-east-1
+      security_group_id:
+        required: true
+        type: string
+      security_group_description:
+        required: true
+        type: string
+jobs:
+  update_security_group:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Public IP
+        id: ip
+        uses: haythem/public-ip@v1.2
+
+      - name: Update security group ingress
+          env:
+            AWS_ACCESS_KEY_ID: ${{ inputs.aws_access_key_id }}
+            AWS_SECRET_ACCESS_KEY: ${{ inputs.aws_secret_access_key }}
+            AWS_DEFAULT_REGION: ${{ inputs.aws_default_region }}
+          run: |
+            securityGroupIds=${{ inputs.SECURITY_GROUP_ID }}
+            ruleDescription=${{ inputs.security_group_description }}
+            rulePort="22"
+            publicIP=${{ steps.ip.outputs.ipv4 }}
+            securityGroupRuleId=$(aws ec2 describe-security-group-rules --filter Name="group-id",Values="'$securityGroupIds'" | jq -r '.SecurityGroupRules[0] | select(.CidrIpv4 == "'$publicIP/32'") | .SecurityGroupRuleId')
+            if [ -z "${securityGroupRuleId}" ]; then
+                aws ec2 authorize-security-group-ingress --group-id $securityGroupIds --ip-permissions '[{"IpProtocol": "tcp", "FromPort": '$rulePort', "ToPort": '$rulePort', "IpRanges": [{"CidrIp": "'$publicIP/32'", "Description": "'$ruleDescription'"}]}]'
+            fi
