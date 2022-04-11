@@ -2,7 +2,7 @@ name: Update AWS security group
 
 on:
   workflow_call:
-    inputs:
+    secrets:
       aws_access_key_id:
         required: true
         type: string
@@ -29,12 +29,12 @@ jobs:
 
       - name: Update security group ingress
           env:
-            AWS_ACCESS_KEY_ID: ${{ inputs.aws_access_key_id }}
-            AWS_SECRET_ACCESS_KEY: ${{ inputs.aws_secret_access_key }}
-            AWS_DEFAULT_REGION: ${{ inputs.aws_default_region }}
+            AWS_ACCESS_KEY_ID: ${{ secrets.aws_access_key_id }}
+            AWS_SECRET_ACCESS_KEY: ${{ secrets.aws_secret_access_key }}
+            AWS_DEFAULT_REGION: ${{ secrets.aws_default_region }}
           run: |
-            securityGroupIds=${{ inputs.SECURITY_GROUP_ID }}
-            ruleDescription=${{ inputs.security_group_description }}
+            securityGroupIds=${{ secrets.SECURITY_GROUP_ID }}
+            ruleDescription=${{ secrets.security_group_description }}
             rulePort="22"
             publicIP=${{ steps.ip.outputs.ipv4 }}
             securityGroupRuleId=$(aws ec2 describe-security-group-rules --filter Name="group-id",Values="'$securityGroupIds'" | jq -r '.SecurityGroupRules[0] | select(.CidrIpv4 == "'$publicIP/32'") | .SecurityGroupRuleId')
