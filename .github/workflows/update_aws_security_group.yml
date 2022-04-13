@@ -33,7 +33,7 @@ jobs:
             AWS_SECRET_ACCESS_KEY: ${{ secrets.aws_secret_access_key }}
             AWS_DEFAULT_REGION: ${{ secrets.aws_default_region }}
           run: |
-            securityGroupIds=${{ secrets.SECURITY_GROUP_ID }}
+            securityGroupIds=${{ secrets.security_group_id }}
             ruleDescription=${{ secrets.security_group_description }}
             rulePort="22"
             publicIP=${{ steps.ip.outputs.ipv4 }}
