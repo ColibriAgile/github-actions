@@ -19,6 +19,9 @@ on:
       namespace:
         required: false
         type: string
+      dns:
+        required: false
+        type: string
     secrets:
       aws_access_key_id:
         required: true
@@ -46,3 +49,7 @@ jobs:
           values: ${{ secrets.values }}
           namespace: ${{ inputs.namespace && inputs.namespace || inputs.repo_name }}
           name: ${{ inputs.repo_name }}
+
+      - name: Echo dns
+        if: ${{ inputs.dns }}
+        run: echo '### https://${{ inputs.dns }}' >> $GITHUB_STEP_SUMMARY
