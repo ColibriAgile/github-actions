@@ -91,9 +91,7 @@ jobs:
         if: ${{ inputs.run_tests }}
         with:
           report_individual_runs: "true"
-          files: |
-            "test-results/*.xml"
-            "${{ github.workspace }}/tests-results/*.xml"
+          files: "**/test-results/*.xml"
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
