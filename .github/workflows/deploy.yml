@@ -52,4 +52,4 @@ jobs:
 
       - name: Echo dns
         if: ${{ inputs.dns }}
-        run: echo '### https://${{ inputs.dns }}' >> $GITHUB_STEP_SUMMARY
+        run: echo 'https://${{ inputs.dns }}' >> $GITHUB_STEP_SUMMARY
