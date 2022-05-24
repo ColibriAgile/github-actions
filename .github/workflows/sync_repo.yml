@@ -3,24 +3,29 @@ name: Sync github repo
 on:
   workflow_call:
     inputs:
-      repo_name:
+      origin_repo_name:
+        required: true
+        type: string
+      dest_repo_name:
+        required: true
+        type: string
+      branch_name:
         required: true
         type: string
     secrets:
-      repo_key_id:
+      origin_repo_key_id:
+        required: true
+      dest_repo_key_id:
         required: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
       - name: git-sync
         uses: wei/git-sync@v3
         with:
-          source_repo: ${{ github.github_repository }}
-          source_branch: ${{ github.ref_name }}
-          destination_repo: https://${{ secrets.repo_key_id }}@github.com/${{ inputs.repo_name }}
-          destination_branch: ${{ github.ref_name }}
+          source_repo: https://${{ secrets.origin_repo_key_id }}@github.com/${{ inputs.origin_repo_name }}
+          source_branch: ${{ inputs.branch_name }}
+          destination_repo: https://${{ secrets.dest_repo_key_id }}@github.com/${{ inputs.dest_repo_name }}
+          destination_branch: ${{ inputs.branch_name }}
