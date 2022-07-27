@@ -4,8 +4,9 @@ on:
   workflow_call:
     inputs:
       port:
-        required: true
+        required: false
         type: string
+        default: 443
       repo_key:
         required: true
         type: string
