@@ -3,6 +3,9 @@ name: Notifify Crucible
 on:
   workflow_call:
     inputs:
+      port:
+        required: true
+        type: string
       repo_key:
         required: true
         type: string
@@ -12,12 +15,39 @@ on:
     secrets:
       api_key:
         required: true
+      aws_access_key_id:
+        required: true
+      aws_secret_access_key:
+        required: true
+      aws_default_region:
+        required: false
+      security_group_id:
+        required: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Public IP
+          id: ip
+          uses: haythem/public-ip@v1.2
+
+      - name: Update security group ingress
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.aws_access_key_id }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.aws_secret_access_key }}
+          AWS_DEFAULT_REGION: ${{ secrets.aws_default_region }}
+        run: |
+          securityGroupIds=${{ secrets.security_group_id }}
+          ruleDescription=GitHubActions-port-${{ inputs.port }}
+          rulePort=${{ inputs.port }}
+          publicIP=${{ steps.ip.outputs.ipv4 }}
+          securityGroupRuleId=$(aws ec2 describe-security-group-rules --filter Name="group-id",Values="'$securityGroupIds'" | jq -r '.SecurityGroupRules[0] | select(.CidrIpv4 == "'$publicIP/32'") | .SecurityGroupRuleId')
+          if [ -z "${securityGroupRuleId}" ]; then
+              aws ec2 authorize-security-group-ingress --group-id $securityGroupIds --ip-permissions '[{"IpProtocol": "tcp", "FromPort": '$rulePort', "ToPort": '$rulePort', "IpRanges": [{"CidrIp": "'$publicIP/32'", "Description": "'$ruleDescription'"}]}]'
+          fi
+
       - name: Update crucible repo index
         run: |
           curl --location --request PUT '${{ inputs.crucible_host }}/rest-service-fecru/admin/repositories/${{ inputs.repo_key }}/incremental-index' --header 'x-api-key: ${{ secrets.api_key }}'
