@@ -31,8 +31,8 @@ jobs:
 
     steps:
       - name: Public IP
-          id: ip
-          uses: haythem/public-ip@v1.2
+        id: ip
+        uses: haythem/public-ip@v1.2
 
       - name: Update security group ingress
         env:
