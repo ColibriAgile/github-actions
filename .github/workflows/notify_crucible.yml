@@ -3,7 +3,7 @@ name: Notifify Crucible
 on:
   workflow_call:
     inputs:
-      repo_name:
+      repo_key:
         required: true
         type: string
       crucible_host:
@@ -20,6 +20,6 @@ jobs:
     steps:
       - name: Update crucible repo index
         run: |
-          curl --location --request PUT '${{ inputs.crucible_host }}/rest-service-fecru/admin/repositories/${{ inputs.repo_name }}/incremental-index' --header 'x-api-key: ${{ secrets.api_key }}'
+          curl --location --request PUT '${{ inputs.crucible_host }}/rest-service-fecru/admin/repositories/${{ inputs.repo_key }}/incremental-index' --header 'x-api-key: ${{ secrets.api_key }}'
           
      
