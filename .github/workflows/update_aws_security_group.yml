@@ -15,8 +15,6 @@ on:
         required: false
       security_group_id:
         required: true
-      security_group_description:
-        required: true
 jobs:
   update_security_group:
     runs-on: ubuntu-latest
@@ -32,7 +30,7 @@ jobs:
           AWS_DEFAULT_REGION: ${{ secrets.aws_default_region }}
         run: |
           securityGroupIds=${{ secrets.security_group_id }}
-          ruleDescription=${{ secrets.security_group_description }}
+          ruleDescription=GitHubActions-port-${{ inputs.port }}
           rulePort=${{ inputs.port }}
           publicIP=${{ steps.ip.outputs.ipv4 }}
           securityGroupRuleId=$(aws ec2 describe-security-group-rules --filter Name="group-id",Values="'$securityGroupIds'" | jq -r '.SecurityGroupRules[0] | select(.CidrIpv4 == "'$publicIP/32'") | .SecurityGroupRuleId')
