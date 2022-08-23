@@ -1,0 +1,16 @@
+name: 'Api call'
+description: 'call http api'
+secrets:
+    server:
+      required: true
+    oauth:
+      required: true
+    method:
+      required: true
+    api:
+      required: true
+    data:
+      required: true
+runs:
+  using: 'node16'
+  main: 'dist/index.js'
