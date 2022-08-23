@@ -14,7 +14,7 @@ on:
       data:
         required: true
 jobs:
-  api_put:
+  api_call:
     runs-on: ubuntu-latest
     steps:
       - name: Update security group ingress
