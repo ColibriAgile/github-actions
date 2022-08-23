@@ -1,0 +1,46 @@
+name: Api call
+
+on:
+  workflow_call:
+    secrets:
+      oauth_request:
+        required: true
+      api_request:
+        required: true
+      data:
+        required: true
+jobs:
+  api_put:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update security group ingress
+        run: |
+          resp_oauth=$(curl -s -w "\n%{http_code}" ${{ secrets.oauth_request }})
+          resp_oauth=(${resp_oauth[@]})
+          http_code=${resp[-1]}
+          if [ $http_code -ne 200 ]; then
+            echo "Authentication failed"
+            exit 1
+          fi
+          token=$(echo ${resp_oauth[0]} | jq '.token' | cut -d '"' -f2)
+          resp_api=$(curl -m 120 -s -w "\n%{http_code}" --request ${{ secrets.api_request }} --header 'Content-Type: application/json' --header 'Authorization: $token' --data-raw '${{secrets.data}}')
+          resp_api=(${resp_api[@]})
+          json=${resp_api[@]::${#resp_api[@]}-1}
+          output=$(echo $json | jq '.output' )
+          echo -e $output
+          api_code=${resp_api[-1]}
+          if [$api_code -ne 200 ]; then
+            echo "Error calling api
+            exit 1
+          fi
+          
+          
+         
+          
+          
+          
+            
+          
+          
+          
+          
