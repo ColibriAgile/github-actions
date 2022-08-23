@@ -17,9 +17,10 @@ jobs:
   api_call:
     runs-on: ubuntu-latest
     steps:
-      - name: Update security group ingress
+      - name: Api call
         run: |
           resp_oauth=$(curl -s -w "\n%{http_code}" ${{ secrets.server }}${{ secrets.oauth }})
+          echo $resp_oauth
           resp_oauth=(${resp_oauth[@]})
           http_code=${resp[-1]}
           if [ $http_code -ne 200 ]; then
@@ -28,6 +29,7 @@ jobs:
           fi
           token=$(echo ${resp_oauth[0]} | jq '.token' | cut -d '"' -f2)
           resp_api=$(curl -m 120 -s -w "\n%{http_code}" --request ${{secrets.method}} ${{ secrets.server }}${{ secrets.api }} --header 'Content-Type: application/json' --header 'Authorization: $token' --data-raw '${{secrets.data}}')
+          echo $resp_api
           resp_api=(${resp_api[@]})
           json=${resp_api[@]::${#resp_api[@]}-1}
           output=$(echo $json | jq '.output' )
