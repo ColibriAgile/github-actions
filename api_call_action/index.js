@@ -4,9 +4,10 @@ const axios = require('axios');
 const {getInput} = require("@actions/core");
 
 try {
-   const secretsInput = getInput('secrets', { required: true });
-   console.log(secretsInput)
+    console.log('Api call')
+    const secretsInput = getInput('secrets', {required: true});
+    console.log(secretsInput)
 
 } catch (error) {
-  core.setFailed(error.message);
+    core.setFailed(error.message);
 }
