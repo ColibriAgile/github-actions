@@ -33,7 +33,7 @@ async function main() {
             if (resp.status != 200) {
                 core.setFailed('Authentication failed');
             }
-            const token = resp.data.token;
+            token = resp.data.token;
             if (!token) {
                 core.setFailed('Authentication failed');
             }
