@@ -1,15 +1,15 @@
-name: 'Api call'
-description: 'call http api'
-secrets:
-    server:
+name: 'Deploy service'
+description: 'Call deploy service'
+inputs:
+    host:
       required: true
     oauth:
-      required: true
+      required: false
     method:
       required: true
-    api:
+    url:
       required: true
-    data:
+    payload:
       required: true
 runs:
   using: 'node16'
