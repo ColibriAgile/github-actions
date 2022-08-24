@@ -37,10 +37,12 @@ async function main() {
             const resp = await httpRequest(host + oauth, 'get', headers);
             if (resp.status != 200) {
                 core.setFailed('Authentication failed');
+                return -1;
             }
             token = resp.data.token;
             if (!token) {
                 core.setFailed('Authentication failed');
+                return -1;
             }
         }
         if (token) {
@@ -49,12 +51,14 @@ async function main() {
         const resp = await httpRequest(host + url, method, headers, payload)
         if (resp.status != 200) {
             core.setFailed('Service failed code:' + resp.status);
+            return -1;
         }
         const exitCode = resp.data.exitCode;
         const output = resp.data.output;
         console.log(output);
         if (exitCode != 0) {
             core.setFailed('Service failed')
+            return -1;
         }
     } catch (error) {
         core.setFailed(error.message);
