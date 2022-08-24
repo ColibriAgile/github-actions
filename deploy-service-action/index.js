@@ -19,12 +19,17 @@ async function httpRequest(url, method, headers = null, payload = null) {
 
 async function main() {
     try {
-
         const host = core.getInput('host')
         const oauth = core.getInput('oauth')
         const url = core.getInput('url');
         const method = core.getInput('method').toLowerCase();
-        const payload = JSON.parse(core.getInput('payload'));
+        const data = core.getInput('payload');
+        let payload
+        try {
+            payload = JSON.parse(data);
+        } catch (error) {
+            core.setFailed('Erro parsing payload ');
+        }
 
         let token
         const headers = {'Content-type': 'Application/json'}
