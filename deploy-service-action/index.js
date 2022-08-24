@@ -33,32 +33,27 @@ async function main() {
 
         let token
         const headers = {'Content-type': 'Application/json'}
-        if (oauth) {
-            const resp = await httpRequest(host + oauth, 'get', headers);
-            if (resp.status != 200) {
-                core.setFailed('Authentication failed');
-                return -1;
-            }
-            token = resp.data.token;
-            if (!token) {
-                core.setFailed('Authentication failed');
-                return -1;
-            }
-        }
-        if (token) {
-            headers['Authorization'] = token;
-        }
-        const resp = await httpRequest(host + url, method, headers, payload)
+        const resp = await httpRequest(host + oauth, 'get', headers);
         if (resp.status != 200) {
-            core.setFailed('Service failed code:' + resp.status);
-            return -1;
+            core.setFailed('Authentication failed');
         }
-        const exitCode = resp.data.exitCode;
-        const output = resp.data.output;
-        console.log(output);
-        if (exitCode != 0) {
-            core.setFailed('Service failed')
-            return -1;
+        token = resp.data.token;
+        if (!token) {
+            core.setFailed('Authentication failed');
+        }
+        if (token && payload) {
+            headers['Authorization'] = token;
+            const resp = await httpRequest(host + url, method, headers, payload)
+            if (resp.status != 200) {
+                core.setFailed('Service failed code:' + resp.status);
+            }
+            const exitCode = resp.data.exitCode;
+            const output = resp.data.output;
+            core.notice('ExitCode:'+ exitCode)
+            core.notice(output);
+            if (exitCode != 0) {
+                core.setFailed('Service failed');
+            }
         }
     } catch (error) {
         core.setFailed(error.message);
