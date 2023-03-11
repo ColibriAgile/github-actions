@@ -25,6 +25,10 @@ on:
         required: false
         type: boolean
         default: true
+      test_name:
+        required: false
+        type: string
+        default: "test_docker"
     secrets:
       aws_access_key_id:
         required: true
@@ -84,7 +88,7 @@ jobs:
             --env 'DB_HOST=${{ env.REPO_NAME }}db' \
             --env 'DB_USER=postgres' \
             --env 'DB_PASSWORD=${{ secrets.DB_PASSWORD }}' \
-            --entrypoint fab ${{ env.REPO_NAME }}:${{ steps.chart.outputs.appVersion }}.${{ github.run_number }}${{ env.TAG_SUFFIX }} test_docker
+            --entrypoint fab ${{ env.REPO_NAME }}:${{ steps.chart.outputs.appVersion }}.${{ github.run_number }}${{ env.TAG_SUFFIX }} ${{ inputs.test_name }}
 
       - name: Publish Unit Test Results
         uses: EnricoMi/publish-unit-test-result-action/composite@v1
