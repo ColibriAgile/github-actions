@@ -47,6 +47,7 @@ jobs:
       contents: read
       issues: read
       pull-requests: write
+      id-token: write
 
     env:
       REPO_NAME: ${{ inputs.repo_name }}
