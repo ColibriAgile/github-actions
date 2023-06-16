@@ -30,9 +30,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Public IP
+      - name: Get public IP
         id: ip
-        uses: haythem/public-ip@v1.3
+        run: |
+          PUBLIC_IP=$(curl -sS https://api.ipify.org) || true
+          if [[ -z "$PUBLIC_IP" ]]; then
+            echo "Service 1 failed. Trying Service 2..."
+            PUBLIC_IP=$(curl -sS ifconfig.co/ip)
+          fi
+          echo "IP=$PUBLIC_IP" >> $GITHUB_ENV
 
       - name: Update security group ingress
         env:
@@ -43,7 +49,7 @@ jobs:
           securityGroupIds=${{ secrets.security_group_id }}
           ruleDescription=GitHubActions-port-${{ inputs.port }}
           rulePort=${{ inputs.port }}
-          publicIP=${{ steps.ip.outputs.ipv4 }}
+          publicIP=${{ env.IP }}
           securityGroupRuleId=$(aws ec2 describe-security-group-rules --filter Name="group-id",Values="'$securityGroupIds'" | jq -r '.SecurityGroupRules[0] | select(.CidrIpv4 == "'$publicIP/32'") | .SecurityGroupRuleId')
           if [ -z "${securityGroupRuleId}" ]; then
               aws ec2 authorize-security-group-ingress --group-id $securityGroupIds --ip-permissions '[{"IpProtocol": "tcp", "FromPort": '$rulePort', "ToPort": '$rulePort', "IpRanges": [{"CidrIp": "'$publicIP/32'", "Description": "'$ruleDescription'"}]}]'
