@@ -31,7 +31,7 @@ jobs:
 
     steps:
       - name: Get public IP
-        if: ${{ !contains( github.ref , 'dependabot') }}
+        if: ${{ !contains(github.ref , 'dependabot') }}
         id: ip
         run: |
           PUBLIC_IP=$(curl -sS https://api.ipify.org) || true
@@ -42,7 +42,7 @@ jobs:
           echo "IP=$PUBLIC_IP" >> $GITHUB_ENV
 
       - name: Update security group ingress
-        if: ${{ !contains( github.ref , 'dependabot') }}
+        if: ${{ !contains(github.ref , 'dependabot') }}
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.aws_access_key_id }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.aws_secret_access_key }}
@@ -58,6 +58,7 @@ jobs:
           fi
 
       - name: Update crucible repo index
+        if: ${{ !contains(github.ref , 'dependabot') }}
         run: |
           curl --location --request PUT '${{ inputs.crucible_host }}/rest-service-fecru/admin/repositories/${{ inputs.repo_key }}/incremental-index' --header 'x-api-key: ${{ secrets.api_key }}'
           
