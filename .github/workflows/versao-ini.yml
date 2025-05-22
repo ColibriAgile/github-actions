@@ -4,7 +4,6 @@ inputs:
   ini-path:
     description: 'Caminho para o versao.ini'
     required: true
-    default: agent/_build/versao.ini
 outputs:
   valor:
     description: 'Versão formatada'
