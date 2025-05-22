@@ -1,12 +1,15 @@
 name: 'Obter versão do INI'
 description: 'Lê um arquivo INI e monta a versão com o número do workflow'
-inputs:
-  ini-path:
-    description: 'Caminho para o versao.ini'
-    required: true
-outputs:
-  valor:
-    description: 'Versão formatada'
+
+on:
+  workflow_call:
+    ini-path:
+      description: 'Caminho para o versao.ini'
+      required: true
+    outputs:
+      valor:
+      description: 'Versão formatada'
+
 runs:
   using: "composite"
   steps:
