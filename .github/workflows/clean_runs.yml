@@ -14,6 +14,21 @@ jobs:
   clean-workflow-runs:
     runs-on: ubuntu-latest
     steps:
+      - name: Debug - Listar execuções ordenadas por workflow
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          workflows=$(gh api -H "Accept: application/vnd.github+json" \
+            "/repos/$REPO/actions/workflows" --jq '.workflows[].id')
+
+          for workflow_id in $workflows; do
+            echo "Workflow $workflow_id"
+            gh api -H "Accept: application/vnd.github+json" \
+              "/repos/$REPO/actions/workflows/$workflow_id/runs" \
+              --jq '.workflow_runs | sort_by(.created_at) | .[] | "\(.id) \(.created_at)"'
+          done
+
       - name: Excluir execuções antigas de cada workflow
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -26,6 +41,8 @@ jobs:
             echo "Processando workflow ID: $workflow_id"
             runs=$(gh api -H "Accept: application/vnd.github+json" \
               "/repos/$REPO/actions/workflows/$workflow_id/runs" --jq '.workflow_runs | sort_by(.created_at) | .[].id')
+            echo "Execuções ordenadas (antigo -> novo):"
+            echo "$runs"
             total=$(echo "$runs" | wc -l)
             to_delete=$(($total - ${{ inputs.keep_last }}))
             if [ $to_delete -gt 0 ]; then
