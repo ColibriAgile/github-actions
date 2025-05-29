@@ -2,7 +2,7 @@
 name: Clean workflow runs
 
 on:
-  workflow_call: # Define como reutilizável
+  workflow_call:
     inputs:
       keep_last:
         description: 'Número de execuções a manter por workflow'
@@ -14,7 +14,6 @@ jobs:
   clean-workflow-runs:
     runs-on: ubuntu-latest
     steps:
-
       - name: Excluir execuções antigas de cada workflow
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -24,7 +23,7 @@ jobs:
             "/repos/$REPO/actions/workflows" --jq '.workflows[] | "\(.id)\t\(.name)"')
 
           echo "$workflow_details" | while IFS=$'\t' read -r workflow_id workflow_name; do
-            if [ -z "$workflow_id" ]; then # Handle potential empty lines if workflow_details is empty
+            if [ -z "$workflow_id" ]; then
               continue
             fi
             echo " "
@@ -57,8 +56,7 @@ jobs:
             if [ $to_delete -gt 0 ]; then
               for ((i=0; i<to_delete; i++)); do
                 run_id="${run_ids[$i]}"
-                gh api -X DELETE -H "Accept: application/vnd.github+json" \
-                  "/repos/$REPO/actions/runs/$run_id"
+                gh api -X DELETE "/repos/$REPO/actions/runs/$run_id"
                 echo "Excluída execução $run_id do workflow $workflow_id (Nome: $workflow_name)"
               done
             else
