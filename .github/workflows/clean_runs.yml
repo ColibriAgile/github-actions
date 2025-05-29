@@ -20,12 +20,15 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
         run: |
-          workflows=$(gh api -H "Accept: application/vnd.github+json" \
-            "/repos/$REPO/actions/workflows" --jq '.workflows[].id')
+          workflow_details=$(gh api -H "Accept: application/vnd.github+json" \
+            "/repos/$REPO/actions/workflows" --jq '.workflows[] | "\\(.id)\\t\\(.name)"')
 
-          for workflow_id in $workflows; do
+          echo "$workflow_details" | while IFS=$'\\t' read -r workflow_id workflow_name; do
+            if [ -z "$workflow_id" ]; then # Handle potential empty lines if workflow_details is empty
+              continue
+            fi
             echo " "
-            echo "Processando workflow ID: $workflow_id"
+            echo "Processando workflow ID: $workflow_id (Nome: $workflow_name)"
             runs=$(gh api -H "Accept: application/vnd.github+json" \
               "/repos/$REPO/actions/workflows/$workflow_id/runs" --jq '.workflow_runs | sort_by(.created_at) | .[].id')
             echo "Execuções ordenadas (antigo -> novo):"
@@ -38,9 +41,9 @@ jobs:
               for run_id in $old_runs; do
                 gh api -X DELETE -H "Accept: application/vnd.github+json" \
                   "/repos/$REPO/actions/runs/$run_id"
-                echo "Excluída execução $run_id do workflow $workflow_id"
+                echo "Excluída execução $run_id do workflow $workflow_id (Nome: $workflow_name)"
               done
             else
-              echo "Nenhuma execução para excluir no workflow $workflow_id"
+              echo "Nenhuma execução para excluir no workflow $workflow_id (Nome: $workflow_name)"
             fi
           done
