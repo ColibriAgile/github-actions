@@ -1,0 +1,40 @@
+name: Limpar execuções antigas de todos os workflows
+
+on:
+  workflow_call: # Define como reutilizável
+    inputs:
+      keep_last:
+        description: 'Número de execuções a manter por workflow'
+        required: false
+        default: 10
+        type: number
+
+jobs:
+  clean-workflow-runs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Excluir execuções antigas de cada workflow
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          workflows=$(gh api -H "Accept: application/vnd.github+json" \
+            "/repos/$REPO/actions/workflows" --jq '.workflows[].id')
+
+          for workflow_id in $workflows; do
+            echo "Processando workflow ID: $workflow_id"
+            runs=$(gh api -H "Accept: application/vnd.github+json" \
+              "/repos/$REPO/actions/workflows/$workflow_id/runs" --jq '.workflow_runs | sort_by(.created_at) | .[].id')
+            total=$(echo "$runs" | wc -l)
+            to_delete=$(($total - ${{ inputs.keep_last }}))
+            if [ $to_delete -gt 0 ]; then
+              old_runs=$(echo "$runs" | head -n $to_delete)
+              for run_id in $old_runs; do
+                gh api -X DELETE -H "Accept: application/vnd.github+json" \
+                  "/repos/$REPO/actions/runs/$run_id"
+                echo "Excluída execução $run_id do workflow $workflow_id"
+              done
+            else
+              echo "Nenhuma execução para excluir no workflow $workflow_id"
+            fi
+          done
