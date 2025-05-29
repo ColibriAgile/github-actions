@@ -35,15 +35,17 @@ jobs:
             while : ; do
               page_runs=$(gh api -H "Accept: application/vnd.github+json" \
                 "/repos/$REPO/actions/workflows/$workflow_id/runs?per_page=100&page=$page" \
-                --jq '.workflow_runs | sort_by(.created_at) | .[].id')
+                --jq -r '.workflow_runs | sort_by(.created_at) | .[].id')
               if [ -z "$page_runs" ]; then
                 break
               fi
-              while IFS= read -r id; do
+              # Usa mapfile para garantir que cada ID seja um elemento separado
+              mapfile -t page_ids <<< "$page_runs"
+              for id in "${page_ids[@]}"; do
                 if [ -n "$id" ]; then
                   run_ids+=("$id")
                 fi
-              done <<< "$page_runs"
+              done
               page=$((page + 1))
             done
             echo "Execuções ordenadas (antigo -> novo):"
