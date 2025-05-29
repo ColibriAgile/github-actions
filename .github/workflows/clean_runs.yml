@@ -34,8 +34,8 @@ jobs:
             echo " "
             echo "Processando workflow ID: $workflow_id (Nome: $workflow_name)"
 
-            # Inicializa variáveis para paginação e armazenamento dos IDs das execuções
-            all_run_ids=""
+            # Inicializa array para armazenar os IDs das execuções
+            all_run_ids=()
             page=1
 
             # Loop para buscar todas as execuções do workflow, página por página
@@ -43,29 +43,31 @@ jobs:
               # Busca até 100 execuções por página, ordenadas por data de criação
               page_run_ids=$(gh api -H "Accept: application/vnd.github+json" \
                 "/repos/$REPO/actions/workflows/$workflow_id/runs?per_page=100&page=$page" \
-                --jq -r '.workflow_runs | sort_by(.created_at) | .[].id' | tr '\n' ' ')
+                --jq -r '.workflow_runs | sort_by(.created_at) | .[].id')
 
               # Se não houver execuções na página, encerra a paginação
               if [ -z "$page_run_ids" ]; then
                 break
               fi
 
-              # Concatena os IDs da página atual à lista geral, separados por espaço
-              all_run_ids="$all_run_ids$page_run_ids"
+              # Adiciona cada ID ao array
+              while read -r run_id; do
+                if [ -n "$run_id" ]; then
+                  all_run_ids+=("$run_id")
+                fi
+              done <<< "$page_run_ids"
+
               page=$((page + 1))
             done
 
-            # Remove espaços extras e transforma a string em uma lista de IDs
-            all_run_ids=$(echo $all_run_ids)
-
             # Exibe todos os IDs de execuções encontradas (do mais antigo ao mais novo)
             echo "Execuções ordenadas (antigo -> novo):"
-            for id in $all_run_ids; do
+            for id in "${all_run_ids[@]}"; do
               echo "$id"
             done
 
             # Conta o total de execuções encontradas
-            total=$(echo $all_run_ids | wc -w)
+            total=${#all_run_ids[@]}
 
             # Obtém o número de execuções a manter (padrão ou informado via input)
             keep_last=${{ inputs.keep_last }}
@@ -75,16 +77,11 @@ jobs:
 
             # Se houver execuções a excluir, faz a exclusão das mais antigas
             if [ $to_delete -gt 0 ]; then
-              i=0
-              for run_id in $all_run_ids; do
-                if [ $i -ge $to_delete ]; then
-                  break
-                fi
-                # Exclui a execução pelo ID
+              for ((i=0; i<to_delete; i++)); do
+                run_id="${all_run_ids[$i]}"
                 gh api -X DELETE -H "Accept: application/vnd.github+json" \
                   "/repos/$REPO/actions/runs/$run_id"
                 echo "Excluída execução $run_id do workflow $workflow_id (Nome: $workflow_name)"
-                i=$((i + 1))
               done
             else
               # Caso não haja execuções a excluir, apenas informa
