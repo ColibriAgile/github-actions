@@ -1,4 +1,5 @@
-name: Limpar execuções antigas de todos os workflows
+# Limpa execuções antigas do workflow
+name: Clean workflow runs
 
 on:
   workflow_call: # Define como reutilizável
