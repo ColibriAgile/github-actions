@@ -20,11 +20,12 @@ jobs:
           REPO: ${{ github.repository }}
         run: |
           # Busca a lista de workflows do repositório, obtendo ID e nome de cada um
+          echo "Busca a lista de workflows do repositório, obtendo ID e nome de cada um"
           workflow_details=$(gh api -H "Accept: application/vnd.github+json" \
             "/repos/$REPO/actions/workflows" --jq '.workflows[] | "\(.id)\t\(.name)"')
           
           # Para cada workflow encontrado, processa as execuções
-          echo "$workflow_details" | while IFS=$'\t' read -r workflow_id workflow_name; do
+          echo "$workflow_details" | while IFS=$'\t' read -r workflow_id workflow_name || [ -n "$workflow_id" ]; do
             # Pula linhas vazias (caso não haja workflows)
             if [ -z "$workflow_id" ]; then
               continue
@@ -51,7 +52,7 @@ jobs:
               fi
 
               # Adiciona cada ID ao array
-              while read -r run_id; do
+              while IFS= read -r run_id; do
                 if [ -n "$run_id" ]; then
                   all_run_ids+=("$run_id")
                 fi
