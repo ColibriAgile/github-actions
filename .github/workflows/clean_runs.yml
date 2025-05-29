@@ -30,7 +30,7 @@ jobs:
             echo " "
             echo "Processando workflow ID: $workflow_id (Nome: $workflow_name)"
             # Paginação para buscar todas as execuções
-            runs=""
+            run_ids=()
             page=1
             while : ; do
               page_runs=$(gh api -H "Accept: application/vnd.github+json" \
@@ -39,22 +39,23 @@ jobs:
               if [ -z "$page_runs" ]; then
                 break
               fi
-              if [ -z "$runs" ]; then
-                runs="$page_runs"
-              else
-                runs="$runs\n$page_runs"
-              fi
+              while IFS= read -r id; do
+                if [ -n "$id" ]; then
+                  run_ids+=("$id")
+                fi
+              done <<< "$page_runs"
               page=$((page + 1))
             done
-            runs=$(echo "$runs" | grep -v '^$')
             echo "Execuções ordenadas (antigo -> novo):"
-            echo "$runs"
-            total=$(echo "$runs" | wc -l)
+            for id in "${run_ids[@]}"; do
+              echo "$id"
+            done
+            total=${#run_ids[@]}
             keep_last=${{ inputs.keep_last }}
-            to_delete=$(($total - $keep_last))
+            to_delete=$((total - keep_last))
             if [ $to_delete -gt 0 ]; then
-              old_runs=$(echo "$runs" | head -n $to_delete)
-              for run_id in $old_runs; do
+              for ((i=0; i<to_delete; i++)); do
+                run_id="${run_ids[$i]}"
                 gh api -X DELETE -H "Accept: application/vnd.github+json" \
                   "/repos/$REPO/actions/runs/$run_id"
                 echo "Excluída execução $run_id do workflow $workflow_id (Nome: $workflow_name)"
