@@ -29,8 +29,20 @@ jobs:
             fi
             echo " "
             echo "Processando workflow ID: $workflow_id (Nome: $workflow_name)"
-            runs=$(gh api -H "Accept: application/vnd.github+json" \
-              "/repos/$REPO/actions/workflows/$workflow_id/runs" --jq '.workflow_runs | sort_by(.created_at) | .[].id')
+            # Paginação para buscar todas as execuções
+            runs=""
+            page=1
+            while : ; do
+              page_runs=$(gh api -H "Accept: application/vnd.github+json" \
+                "/repos/$REPO/actions/workflows/$workflow_id/runs?per_page=100&page=$page" \
+                --jq '.workflow_runs | sort_by(.created_at) | .[].id')
+              if [ -z "$page_runs" ]; then
+                break
+              fi
+              runs="$runs\n$page_runs"
+              page=$((page + 1))
+            done
+            runs=$(echo "$runs" | grep -v '^$')
             echo "Execuções ordenadas (antigo -> novo):"
             echo "$runs"
             total=$(echo "$runs" | wc -l)
