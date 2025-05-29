@@ -39,7 +39,11 @@ jobs:
               if [ -z "$page_runs" ]; then
                 break
               fi
-              runs="$runs\n$page_runs"
+              if [ -z "$runs" ]; then
+                runs="$page_runs"
+              else
+                runs="$runs\n$page_runs"
+              fi
               page=$((page + 1))
             done
             runs=$(echo "$runs" | grep -v '^$')
