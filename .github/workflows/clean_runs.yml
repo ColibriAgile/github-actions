@@ -21,9 +21,9 @@ jobs:
           REPO: ${{ github.repository }}
         run: |
           workflow_details=$(gh api -H "Accept: application/vnd.github+json" \
-            "/repos/$REPO/actions/workflows" --jq '.workflows[] | "\\(.id)\\t\\(.name)"')
+            "/repos/$REPO/actions/workflows" --jq '.workflows[] | "\(.id)\t\(.name)"')
 
-          echo "$workflow_details" | while IFS=$'\\t' read -r workflow_id workflow_name; do
+          echo "$workflow_details" | while IFS=$'\t' read -r workflow_id workflow_name; do
             if [ -z "$workflow_id" ]; then # Handle potential empty lines if workflow_details is empty
               continue
             fi
