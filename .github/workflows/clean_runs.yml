@@ -44,9 +44,10 @@ jobs:
             echo "Execuções ordenadas (antigo -> novo):"
             echo "$runs"
             total=$(echo "$runs" | wc -l)
-            to_delete=$(($total - ${{ inputs.keep_last }}))
+            keep_last=${{ inputs.keep_last }}
+            to_delete=$(($total - $keep_last))
             if [ $to_delete -gt 0 ]; then
-              old_runs=$(echo "$runs" | head -n $to_delete)
+              old_runs=$(echo "$runs" | head -n -$keep_last)
               for run_id in $old_runs; do
                 gh api -X DELETE -H "Accept: application/vnd.github+json" \
                   "/repos/$REPO/actions/runs/$run_id"
