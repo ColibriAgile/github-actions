@@ -39,13 +39,12 @@ jobs:
               if [ -z "$page_runs" ]; then
                 break
               fi
-              # Usa mapfile para garantir que cada ID seja um elemento separado
-              mapfile -t page_ids <<< "$page_runs"
-              for id in "${page_ids[@]}"; do
-                if [ -n "$id" ]; then
+              # Adiciona cada ID ao array usando um loop simples
+              while read -r id; do
+                if [ -n "$id" ] && [ "$id" != "null" ]; then
                   run_ids+=("$id")
                 fi
-              done
+              done <<< "$page_runs"
               page=$((page + 1))
             done
             echo "Execuções ordenadas (antigo -> novo):"
