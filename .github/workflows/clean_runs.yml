@@ -39,7 +39,7 @@ jobs:
                 break
               fi
               # Adiciona cada ID ao array usando um loop simples
-              while read -r id; do
+              while read -r id _; do
                 if [ -n "$id" ] && [ "$id" != "null" ]; then
                   run_ids+=("$id")
                 fi
