@@ -43,11 +43,8 @@ jobs:
             while : ; do
               # Busca até 100 execuções por página, ordenadas por data de criação
 
-              echo " "
               echo "»» Obtendo a pagina $((page)) de $workflow_name"
-
-              page_run_ids=$(gh api -H "Accept: application/vnd.github+json" "/repos/$REPO/actions/workflows/$workflow_id/runs?per_page=100&page=$page" --jq -r '.workflow_runs | sort_by(.created_at) | .[].id')
-
+              page_run_ids=$(gh api -H "Accept: application/vnd.github+json" "/repos/$REPO/actions/workflows/$workflow_id/runs?per_page=100&page=$page" --jq '.workflow_runs | sort_by(.created_at) | .[].id')
               echo "«« Página $((page)) obtida"
 
               # Se não houver execuções na página, encerra a paginação
