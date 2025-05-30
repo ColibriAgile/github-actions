@@ -18,9 +18,11 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
+          CURRENT_RUN_ID: ${{ github.run_id }}
         run: |
           # Este script remove execuções antigas de todos os workflows do repositório,
           # incluindo execuções de workflows que foram renomeados ou removidos (órfãos).
+          # Se keep_last=0, apaga todas as execuções exceto a execução atual.
 
           # Busca todas as execuções de workflow do repositório, paginando para garantir que todas sejam coletadas
           echo "Buscando todas as execuções de workflow do repositório"
@@ -42,16 +44,31 @@ jobs:
 
             # Obtém o número de execuções a manter (padrão ou informado via input)
             keep_last=${{ inputs.keep_last }}
-
-            # Calcula quantas execuções devem ser excluídas
             to_delete=$((total - keep_last))
-            
-            if [ $to_delete -gt 0 ]; then
+
+            # Se keep_last=0, apaga todas as execuções exceto a execução atual
+            if [ "$keep_last" -eq 0 ]; then
+              echo "Apagando todas as execuções deste workflow, exceto a execução atual ($CURRENT_RUN_ID)"
+              grep -v "^$CURRENT_RUN_ID$" run_ids.txt | while read -r run_id; do
+                run_id="$(echo "$run_id" | xargs)" # Remove espaços em branco
+                if [ -n "$run_id" ]; then
+                  gh api -X DELETE -H "Accept: application/vnd.github+json" "/repos/$REPO/actions/runs/$run_id"
+                  echo "Excluída execução $run_id do workflow $workflow_name"
+                fi
+              done
+
+            elif [ $to_delete -gt 0 ]; then
               # Exclui as execuções mais antigas, mantendo apenas as mais recentes
               head -n $to_delete run_ids.txt | while read -r run_id; do
                 run_id="$(echo "$run_id" | xargs)" # Remove espaços em branco
-                gh api -X DELETE -H "Accept: application/vnd.github+json" "/repos/$REPO/actions/runs/$run_id"
-                echo "Excluída execução $run_id do workflow $workflow_name"
+              
+                # Nunca apaga a execução atual
+                if [ "$run_id" != "$CURRENT_RUN_ID" ]; then
+                  gh api -X DELETE -H "Accept: application/vnd.github+json" "/repos/$REPO/actions/runs/$run_id"
+                  echo "Excluída execução $run_id do workflow $workflow_name"
+                else
+                  echo "Ignorando execução atual $run_id"
+                fi
               done
             else
               # Caso não haja execuções a excluir, apenas informa
