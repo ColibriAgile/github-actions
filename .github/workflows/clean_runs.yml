@@ -33,13 +33,15 @@ jobs:
 
           # Para cada nome de workflow distinto encontrado nas execuções, processa separadamente
           cut -f1 runs_by_workflow.txt | sort | uniq | while read -r workflow_name; do
-            echo ""
-            echo "»» Processando workflow: $workflow_name"
+            echo " "
+            echo "»»» Processando workflow: $workflow_name"
 
             # Filtra execuções deste workflow, ordenando do mais antigo para o mais novo pela data de criação
             grep -F "$workflow_name" runs_by_workflow.txt | sort -k3 | awk -F'\t' '{print $2}' > run_ids.txt
             total=$(wc -l < run_ids.txt)
-            echo "Execuções encontradas: $total"
+            echo "««« Execuções encontradas: $total"
+            echo " "
+            echo " "
             cat run_ids.txt
 
             # Obtém o número de execuções a manter (padrão ou informado via input)
@@ -49,6 +51,7 @@ jobs:
             # Se keep_last=0, apaga todas as execuções exceto a execução atual
             if [ "$keep_last" -eq 0 ]; then
               echo "Apagando todas as execuções deste workflow, exceto a execução atual ($CURRENT_RUN_ID)"
+              echo " "
               grep -v "^$CURRENT_RUN_ID$" run_ids.txt | while read -r run_id; do
                 run_id="$(echo "$run_id" | xargs)" # Remove espaços em branco
                 if [ -n "$run_id" ]; then
