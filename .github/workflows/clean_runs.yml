@@ -14,78 +14,39 @@ jobs:
   clean-workflow-runs:
     runs-on: ubuntu-latest
     steps:
-      - name: Excluir execuções antigas de cada workflow
+      - name: Excluir execuções antigas de cada workflow (incluindo órfãos)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
         run: |
-          # Busca a lista de workflows do repositório, obtendo ID e nome de cada um
-          echo "Busca a lista de workflows do repositório, obtendo ID e nome de cada um"
-          workflow_details=$(gh api -H "Accept: application/vnd.github+json" \
-            "/repos/$REPO/actions/workflows" --jq '.workflows[] | "\(.id)\t\(.name)"')
-          
-          # Para cada workflow encontrado, processa as execuções
-          echo "$workflow_details" | while IFS=$'\t' read -r workflow_id workflow_name || [ -n "$workflow_id" ]; do
-            # Pula linhas vazias (caso não haja workflows)
-            if [ -z "$workflow_id" ]; then
-              continue
-            fi
+          # Busca todas as execuções de workflow do repositório
+          echo "Buscando todas as execuções de workflow do repositório"
+          all_runs=$(gh api -H "Accept: application/vnd.github+json" \
+            "/repos/$REPO/actions/runs?per_page=100" --paginate)
 
-            # Exibe qual workflow está sendo processado
-            echo " "
-            echo "»» Processando workflow ID: $workflow_id (Nome: $workflow_name)"
+          # Agrupa execuções por nome de workflow
+          echo "$all_runs" | jq -r '.workflow_runs[] | "\(.name)\t\(.id)\t\(.created_at)"' | sort | while IFS=$'\t' read -r workflow_name run_id created_at; do
+            echo -e "$workflow_name\t$run_id\t$created_at"
+          done > runs_by_workflow.txt
 
-            # Inicializa array para armazenar os IDs das execuções
-            all_run_ids=()
-            page=1
-
-            # Loop para buscar todas as execuções do workflow, página por página
-            while : ; do
-              # Busca até 100 execuções por página, ordenadas por data de criação
-
-              echo "Obtendo a pagina $((page))"
-              page_run_ids=$(gh api -H "Accept: application/vnd.github+json" "/repos/$REPO/actions/workflows/$workflow_id/runs?per_page=100&page=$page" --jq '.workflow_runs | sort_by(.created_at) | .[].id')
-
-              # Se não houver execuções na página, encerra a paginação
-              if [ -z "$page_run_ids" ]; then
-                break
-              fi
-
-              # Adiciona cada ID ao array
-              while IFS= read -r run_id; do
-                if [ -n "$run_id" ]; then
-                  all_run_ids+=("$run_id")
-                fi
-              done <<< "$page_run_ids"
-
-              page=$((page + 1))
-            done
-
-            # Conta o total de execuções encontradas
-            total=${#all_run_ids[@]}
-
-            # Exibe todos os IDs de execuções encontradas (do mais antigo ao mais novo)
-            echo "Execuções ordenadas (antigo -> novo): ${total}"
-            for id in "${all_run_ids[@]}"; do
-              echo "$id"
-            done
-
-            # Obtém o número de execuções a manter (padrão ou informado via input)
+          # Para cada nome de workflow distinto, processa as execuções
+          cut -f1 runs_by_workflow.txt | sort | uniq | while read -r workflow_name; do
+            echo "\n»» Processando workflow: $workflow_name"
+            # Lista execuções deste workflow, ordenadas do mais antigo para o mais novo
+            grep -F "$workflow_name" runs_by_workflow.txt | sort -k3 | awk -F'\t' '{print $2}' > run_ids.txt
+            total=$(wc -l < run_ids.txt)
+            echo "Execuções encontradas: $total"
+            cat run_ids.txt
             keep_last=${{ inputs.keep_last }}
-
-            # Calcula quantas execuções devem ser excluídas
             to_delete=$((total - keep_last))
-
-            # Se houver execuções a excluir, faz a exclusão das mais antigas
             if [ $to_delete -gt 0 ]; then
-              for ((i=0; i<to_delete; i++)); do
-                run_id="${all_run_ids[$i]}"
-                run_id="$(echo "$run_id" | xargs)" # Remove espaços em branco
+              head -n $to_delete run_ids.txt | while read -r run_id; do
+                run_id="$(echo "$run_id" | xargs)"
                 gh api -X DELETE -H "Accept: application/vnd.github+json" "/repos/$REPO/actions/runs/$run_id"
-                echo "Excluída execução $run_id do workflow $workflow_id (Nome: $workflow_name)"
+                echo "Excluída execução $run_id do workflow $workflow_name"
               done
             else
-              # Caso não haja execuções a excluir, apenas informa
-              echo "Nenhuma execução para excluir no workflow $workflow_id (Nome: $workflow_name)"
+              echo "Nenhuma execução para excluir no workflow $workflow_name"
             fi
           done
+          rm -f runs_by_workflow.txt run_ids.txt
