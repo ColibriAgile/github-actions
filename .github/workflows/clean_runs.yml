@@ -45,7 +45,8 @@ jobs:
             cat run_ids.txt
 
             # Obtém o número de execuções a manter (padrão ou informado via input)
-            keep_last=${{ inputs.keep_last }}
+            keep_last="${{ inputs.keep_last }}"
+            keep_last="${keep_last:-10}"
             to_delete=$((total - keep_last))
 
             # Se keep_last=0, apaga todas as execuções exceto a execução atual
