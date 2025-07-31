@@ -63,5 +63,3 @@ jobs:
                --request PUT \
                --header 'x-api-key: ${{ secrets.CRUCIBLE_API_KEY }}' \
                '${{ env.CRUCIBLE_HOST }}/rest-service-fecru/admin/repositories/${{ inputs.repo_key }}/incremental-index'
-          
-     
