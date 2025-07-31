@@ -1,4 +1,4 @@
-name: Notifify Crucible
+name: Notify Crucible
 
 on:
   workflow_call:
