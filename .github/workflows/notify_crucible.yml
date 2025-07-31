@@ -3,31 +3,16 @@ name: Notifify Crucible
 on:
   workflow_call:
     inputs:
-      port:
-        required: false
-        type: string
-        default: 443
       repo_key:
         required: true
         type: string
-      crucible_host:
-        required: false
-        type: string
-    secrets:
-      api_key:
-        required: true
-      aws_access_key_id:
-        required: true
-      aws_secret_access_key:
-        required: true
-      aws_default_region:
-        required: false
-      security_group_id:
-        required: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      CRUCIBLE_HOST: https://code.ncrcolibri.com.br
+      RULE_PORT: 443
 
     steps:
       - name: Get public IP
@@ -44,22 +29,39 @@ jobs:
       - name: Update security group ingress
         if: ${{ !contains(github.ref , 'dependabot') }}
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.aws_access_key_id }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.aws_secret_access_key }}
-          AWS_DEFAULT_REGION: ${{ secrets.aws_default_region }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
         run: |
-          securityGroupIds=${{ secrets.security_group_id }}
-          ruleDescription=GitHubActions-port-${{ inputs.port }}
-          rulePort=${{ inputs.port }}
+          securityGroupIds=${{ secrets.SECURITY_GROUP_ID }}
+          ruleDescription=GitHubActions-port-${{ env.RULE_PORT }}
+          rulePort=${{ env.RULE_PORT }}
           publicIP=${{ env.IP }}
-          securityGroupRuleId=$(aws ec2 describe-security-group-rules --filter Name="group-id",Values="'$securityGroupIds'" | jq -r '.SecurityGroupRules[0] | select(.CidrIpv4 == "'$publicIP/32'") | .SecurityGroupRuleId')
+          
+          securityGroupRuleId=$(aws ec2 describe-security-group-rules \
+            --filter Name="group-id",Values="'$securityGroupIds'" | \
+            jq -r '.SecurityGroupRules[0] | select(.CidrIpv4 == "'$publicIP/32'") | .SecurityGroupRuleId')
+          
           if [ -z "${securityGroupRuleId}" ]; then
-              aws ec2 authorize-security-group-ingress --group-id $securityGroupIds --ip-permissions '[{"IpProtocol": "tcp", "FromPort": '$rulePort', "ToPort": '$rulePort', "IpRanges": [{"CidrIp": "'$publicIP/32'", "Description": "'$ruleDescription'"}]}]'
+              aws ec2 authorize-security-group-ingress \
+                --group-id $securityGroupIds \
+                --ip-permissions '[{
+                  "IpProtocol": "tcp", 
+                  "FromPort": '$rulePort', 
+                  "ToPort": '$rulePort', 
+                  "IpRanges": [{
+                    "CidrIp": "'$publicIP/32'", 
+                    "Description": "'$ruleDescription'"
+                  }]
+                }]'
           fi
 
       - name: Update crucible repo index
         if: ${{ !contains(github.ref , 'dependabot') }}
         run: |
-          curl --location --request PUT '${{ inputs.crucible_host }}/rest-service-fecru/admin/repositories/${{ inputs.repo_key }}/incremental-index' --header 'x-api-key: ${{ secrets.api_key }}'
+          curl --location \
+               --request PUT \
+               --header 'x-api-key: ${{ secrets.CRUCIBLE_API_KEY }}' \
+               '${{ env.CRUCIBLE_HOST }}/rest-service-fecru/admin/repositories/${{ inputs.repo_key }}/incremental-index'
           
      
